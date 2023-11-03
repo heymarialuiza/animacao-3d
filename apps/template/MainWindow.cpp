@@ -197,7 +197,8 @@ MainWindow::update()
 
   if (_animate)
     _radius = 1 + cosf(_speed * (time += deltaTime()) * 0.5f);*/
-    _transf.setRotation(cg::vec3f{ 0, 1, 1 }, 100 * glfwGetTime(), cg::vec3f{ 0, 0, 0 });
+    //_transf.setRotation(cg::vec3f{ 0, 1, 1 }, 100 * glfwGetTime(), cg::vec3f{ 0, 0, 0 });
+    _transf.setRotation(_rotation, _angle, cg::vec3f{ 0, 0, 0 });
 }
 
 void
@@ -233,18 +234,19 @@ MainWindow::gui()
 {
   using namespace cg;
   // Put your gui code here. Example:
-  ImGui::SetNextWindowSize({360, 180});//-> tamanho da janela 360*180
-  ImGui::Begin("Controls");
+  //ImGui::SetNextWindowSize({360, 180});//-> tamanho da janela 360*180
+  //ImGui::Begin("Controls");
 
   ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
   ImGui::Begin("Inspector");
-  ImGui::DragFloat3("Rotation", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
+  ImGui::DragFloat3("Rotation", (float*)&_rotation, 1.0f, 0, 1, "%.2f");
+  ImGui::SliderFloat("Angle", &_angle, -180.0f, 180.0f);
   
   _transf = mat4f::rotation(quatf::eulerAngles(_rotation), vec3f::null());
 
   _program.setUniformMat4("transf", _transf);
   update();
-  ImGui::End();
+  //ImGui::End();
   ImGui::End();
 
   // ImGui::Begin("Template GUI");

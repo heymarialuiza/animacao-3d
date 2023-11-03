@@ -56,6 +56,8 @@ private:
   GLuint _buffers[3];
   cg::mat4f _transf{1.0f};
   cg::vec3f _rotation{0.0f};
+  float _angle{0};
+
   /*cg::Color _lineColor;
   cg::Color _meshColor;
   float _radius;
