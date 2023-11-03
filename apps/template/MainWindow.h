@@ -52,11 +52,18 @@ private:
 
   // Attribute examples
   cg::GLSL::Program _program;
-  GLuint _vao{};
-  GLuint _buffers[3];
-  cg::mat4f _transf{1.0f};
-  cg::vec3f _rotation{0.0f};
-  float _angle{0};
+  GLuint _vao[3]{};
+  
+	GLuint _buffers[3][3];
+	cg::mat4f _transf{1.0f};
+
+	cg::vec3f _rotation{0.0f};
+	cg::vec3f _translate{ 0.0f };
+	cg::vec3f _scale{ 1.0f };
+	float _angle{0};
+	bool _cubo{ true };
+	bool _losangulo{ true };
+	bool _piramide{ true };
 
   /*cg::Color _lineColor;
   cg::Color _meshColor;
