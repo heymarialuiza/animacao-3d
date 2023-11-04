@@ -35,6 +35,7 @@
 
 #include "graphics/GLWindow.h"
 #include "graphics/GLRenderWindow3.h"
+#include "graphics/Application.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -44,19 +45,19 @@
 class MainWindow final: public cg::GLWindow
 {
 public:
-  MainWindow(int width, int height);
+	MainWindow(int width, int height);
 
 private:
-  using Base = cg::GLWindow;
+	using Base = cg::GLWindow;
   
 
-  // Attribute examples
-  cg::GLSL::Program _program;
-  GLuint _vao[3]{};
+	// Attribute examples
+	cg::GLSL::Program _program;
+	GLuint _vao[3]{};
   
 	GLuint _buffers[3][3];
 	cg::mat4f _transf{1.0f};
-
+	bool _animate{ true };
 	cg::vec3f _rotation{0.0f};
 	cg::vec3f _translate{ 0.0f };
 	cg::vec3f _scale{ 1.0f };
@@ -65,20 +66,12 @@ private:
 	bool _losangulo{ true };
 	bool _piramide{ true };
 
-  /*cg::Color _lineColor;
-  cg::Color _meshColor;
-  float _radius;
-  float _speed;
-  bool _animate{true};
-  bool _showGround{true};*/
-
-  // Overridden method examples
-  void initialize() override;
-  void update() override; //faz animacao
-  void render() override;
-  //bool keyInputEvent(int, int, int) override;
-  void gui() override;
-  void terminate() override;
+	// Overridden method examples
+	void initialize() override;
+	void update() override;
+	void render() override;
+	void gui() override;
+	void terminate() override;
 
 }; // MainWindow
 
