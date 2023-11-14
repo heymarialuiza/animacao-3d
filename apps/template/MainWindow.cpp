@@ -33,13 +33,27 @@
 #include "MainWindow.h"
 #include <graph/SceneObjectBuilder.h>
 #include <graph/SceneObjectBuilder.h>
-#define STRINGFY(s) "#version 400\n"#s 
-static const char* fs=STRINGFY(
+
+#define STRINGFY(s) "#version 400\n"#s
+static const char* fs = STRINGFY(
     in vec4 color;      //entrada do shader
     out vec4 fragColor; //saída do shader
+
+    uniform vec4 ambientLight;
+    //uniform vec4 specularLight;
+    //uniform vec4 difuseLight;
+
     void main()
     {
-    fragColor=color;
+        float ka = ambientLight.w;
+        vec4 ambientColor = vec4(ambientLight.x, ambientLight.y, ambientLight.z, 1.0);
+        vec4 ambiente = ka * ambientColor;
+
+        //vec4 especular = specularLight;
+
+        //vec4 difuso = difuseLight;
+
+        fragColor = color * ambiente;
     }
 );
 
@@ -167,17 +181,21 @@ namespace piramide
     };
 } // end namespace piramide
 
-static const char* vs=STRINGFY(
-  layout(location = 0) in vec4 vertex;
-  layout(location = 1) in vec4 vertexColor;
-  uniform mat4 transf;
-  out vec4 color;
+static const char* vs = STRINGFY(
+    layout(location = 0) in vec4 vertex;
+    layout(location = 1) in vec4 vertexColor;
+    out vec4 color;
 
-  void main()
-  {
-    gl_Position = transf * vertex;
-    color = vertexColor;
-  }
+    uniform mat4 view; // Matriz de visualização
+    uniform mat4 projection; // Matriz de projeção
+    uniform mat4 transf;
+
+    void main()
+    {
+        vec4 result = projection * view * transf * vertex;
+        gl_Position = result;
+        color = vertexColor;
+    }
 );
 
 /////////////////////////////////////////////////////////////////////
@@ -283,6 +301,17 @@ MainWindow::render()
     // Put your scene rendering code here. 
     clear(cg::Color::darkGray);//limpa a tela e coloca darkgray de cor de fundo
     //_program.setUniformMat4("transf", _transf);
+    
+    _program.setUniformVec4("ambientLight", _ambientLight);
+    //_program.setUniformVec4("specularLight", _specularLight);
+    //_program.setUniformVec4("difuseLight", _difuseLight);
+
+    _view = cg::mat4f::lookAt(_eye, _center, _up);
+    _program.setUniformMat4("view", _view);
+
+    _projection = cg::mat4f::perspective(_fovy, _aspect, _zNear, _zFar);
+    _program.setUniformMat4("projection", _projection);
+
     if (_animate)
         _rotation = _rotation + vec3f{ 0.0f, 0.1f, 0.0f };
 
@@ -320,15 +349,42 @@ MainWindow::gui()
     using namespace cg;
     ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
     ImGui::Begin("Inspector");
+
+    if (ImGui::Button("RESET")) {
+        reset();
+    }
+    DoubleSpacing();
     ImGui::Checkbox("Animate", &_animate);
+    DoubleSpacing();
 
     if (!_animate) {
-        ImGui::DragFloat3("Rotation", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
+        ImGui::Separator();
+        ImGui::Text("Controles dos Objetos");
+        DoubleSpacing();
+        ImGui::DragFloat3("Rotação", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
         ImGui::Checkbox("Cubo", &_cubo);
         ImGui::Checkbox("Losangulo", &_losangulo);
         ImGui::Checkbox("Piramide", &_piramide);
     }
 
+    ImGui::Separator();
+    ImGui::Text("Controles das Luz");
+    DoubleSpacing();
+    ImGui::DragFloat4("Luz Ambiente", (float*)&_ambientLight, 0.01f, 0, 1, "%.2f");
+    //ImGui::DragFloat4("Luz Especular", (float*)&_specularLight, 0.01f, 0, 1, "%.2f");
+    //ImGui::DragFloat4("Luz Difusa", (float*)&_difuseLight, 0.01f, 0, 1, "%.2f");
+
+    ImGui::Separator();
+    ImGui::Text("Controles da Câmera");
+    DoubleSpacing();
+    ImGui::DragFloat3("Olho", (float*)&_eye, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("Centro", (float*)&_center, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("UP", (float*)&_up, 1.0f, 0, 0, "%.2f");
+    DoubleSpacing();
+    ImGui::DragFloat("Fovy", (float*)&_fovy, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("Aspect", (float*)&_aspect, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("zNear", (float*)&_zNear, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("zFar", (float*)&_zFar, 1.0f, 0, 0, "%.2f");
     ImGui::End();
 }
 

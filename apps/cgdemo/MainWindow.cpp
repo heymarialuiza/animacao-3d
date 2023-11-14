@@ -70,10 +70,10 @@ MainWindow::beginInitialize()
   buildDefaultMeshes();
   Assets::meshes().insert(_defaultMeshes.begin(), _defaultMeshes.end());
 
-  constexpr auto ffn = "fonts/Roboto-Regular.ttf";
-  auto fonts = ImGui::GetIO().Fonts;
+  //constexpr auto ffn = "fonts/Roboto-Regular.ttf";
+  //auto fonts = ImGui::GetIO().Fonts;
 
-  fonts->AddFontFromFileTTF(Application::assetFilePath(ffn).c_str(), 16);
+  //fonts->AddFontFromFileTTF(Application::assetFilePath(ffn).c_str(), 16);
 }
 
 void
