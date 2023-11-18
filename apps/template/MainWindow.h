@@ -53,36 +53,55 @@ public:
 private:
 	using Base = cg::GLWindow;
   
-
 	// Attribute examples
 	GLSL::Program _program;
 	GLuint _vao[3]{};
-	GLuint _buffers[3][3];
+	GLuint _buffers[3][4];
 
 	mat4f _transf{ 1.0f };
 	mat4f _view{ 1.0f };
 	mat4f _projection{ 1.0f };
 
-	vec3f _eye{ 0.0f, 0.0f, 5.0f };
-	vec3f _center{ 0.0f, 0.0f, 1.0f };
-	vec3f _up{0.0f, 1.0f, 0.0f };
+	float _angle{};
+	vec3f _cameraPosition{};
+	vec3f _cameraTarget{};
+	vec3f _cameraUp{};
 
-	float _fovy{ 25.0 };
-	float _aspect{ 1.0 };
-	float _zNear{ 100.0 };
-	float _zFar{ 1.0 };
+	float _fov{};
+	float _aspectRatio{};
+	float _nearPlane{};
+	float _farPlane{};
 
-	vec3f _rotation{ 0.0f };
+	vec3f _rotation{};
 	vec3f _scale{ 1.0f };
 
-	vec4f _ambientLight{ 1.0f, 1.0f, 1.0f, 1.0f };
-	vec4f _specularLight{ 1.0f, 1.0f, 1.0f, 1.0f };
-	vec4f _difuseLight{ 1.0f, 1.0f, 1.0f, 1.0f };
+	vec4f _ambientLight{};
+	vec4f _lightColor{};
+	vec3f _lightPos{};
+	int _n;
 
-	bool _animate{ false };
-	bool _cubo{ true };
-	bool _losangulo{ true };
-	bool _piramide{ true };
+
+	bool _animate{};
+	bool _cubo{};
+	bool _losangulo{};
+	bool _piramide{};
+
+	/////////////////////////////
+	double _lastMouseX = 0.0;
+	double _lastMouseY = 0.0;
+	double _yaw = -89.9;   // Rotação em torno do eixo y
+	double _pitch = 0.1; // Rotação em torno do eixo x
+	double _sensitivity = 0.1;
+	float _cameraSpeed = 0.05f;
+	vec3f _cameraFront{};
+
+	//////////////////////////////
+	bool _line{ false };
+
+
+	void processMouseMovement(double, double);
+	void updateCameraDirection();
+	void processKeyboardInput();
 
 	// Overridden method examples
 	void initialize() override;
@@ -92,25 +111,31 @@ private:
 	void terminate() override;
 
 	void reset() {
-		_eye = { 0.0f, 0.0f, 5.0f };
-		_center = { 0.0f, 0.0f, 1.0f };
-		_up = { 0.0f, 1.0f, 0.0f };
+		_angle = 0;
+		_cameraPosition = { 0.0f, 1.0f, 15.0f };
+		_cameraTarget = { 0.0f, 1.0f, 14.0f };
+		_cameraUp = { 0.0f, 1.0f, 0.0f };
 
-		_fovy = 25.0;
-		_aspect = 1.0;
-		_zNear = 100.0;
-		_zFar = 1.0;
+		_fov = 25.0f;
+		_aspectRatio = 1.0f;
+		_nearPlane = 1000.0f;
+		_farPlane = 1.0f;
 
 		_rotation = { 0.0f, 0.0f, 0.0f };
 
 		_ambientLight = { 1.0f, 1.0f, 1.0f, 1.0f };
-		_specularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
-		_difuseLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+		_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+		_lightPos = { 0.0f, 0.0f, -1.0f};
+		_n = 30;
 
 		_animate = false;
 		_cubo = true;
 		_losangulo = true;
 		_piramide = true;
+
+		_yaw = -89.9;
+		_pitch = 0.1;
+		_cameraFront = { 0.0f, 0.0f, -1.0f };
 	}
 
 	void DoubleSpacing() {

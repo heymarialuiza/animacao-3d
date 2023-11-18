@@ -33,170 +33,63 @@
 #include "MainWindow.h"
 #include <graph/SceneObjectBuilder.h>
 #include <graph/SceneObjectBuilder.h>
+#include "Objects.cpp"
+#include "Fragments.cpp"
 
-#define STRINGFY(s) "#version 400\n"#s
-static const char* fs = STRINGFY(
-    in vec4 color;      //entrada do shader
-    out vec4 fragColor; //saída do shader
-
-    uniform vec4 ambientLight;
-    //uniform vec4 specularLight;
-    //uniform vec4 difuseLight;
-
-    void main()
-    {
-        float ka = ambientLight.w;
-        vec4 ambientColor = vec4(ambientLight.x, ambientLight.y, ambientLight.z, 1.0);
-        vec4 ambiente = ka * ambientColor;
-
-        //vec4 especular = specularLight;
-
-        //vec4 difuso = difuseLight;
-
-        fragColor = color * ambiente;
-    }
-);
-
-struct uint3
+/////////////////////////////////////////////////////////////////////
+// Função para processar a movimentação do mouse
+void
+MainWindow::processMouseMovement(double mouseX, double mouseY)
 {
-  unsigned int x;
-  unsigned int y;
-  unsigned int z;
+    double xOffset = (mouseX - _lastMouseX) * _sensitivity;
+    double yOffset = (_lastMouseY - mouseY) * _sensitivity;
 
-}; // int3
+    _yaw += xOffset;
+    _pitch += yOffset;
 
-namespace cubo
-{ // begin namespace cubo
 
-    static const cg::vec3f translate{ 0.5f, -0.2f, 0.0f };
+    // Limitar o pitch para evitar inversões da câmera
+    _pitch = std::max(std::min(_pitch, 90.0), -90.0);
 
-    // Defina os vértices para o cubo
-    static const cg::vec4f v[]
-    {
-        {-0.3f, -0.3f, -0.3f, 1}, // 0
-        {+0.3f, -0.3f, -0.3f, 1}, // 1
-        {+0.3f, +0.3f, -0.3f, 1}, // 2
-        {-0.3f, +0.3f, -0.3f, 1}, // 3
-        {-0.3f, -0.3f, +0.3f, 1}, // 4
-        {+0.3f, -0.3f, +0.3f, 1}, // 5
-        {+0.3f, +0.3f, +0.3f, 1}, // 6
-        {-0.3f, +0.3f, +0.3f, 1}  // 7
-    };
+    _lastMouseX = mouseX;
+    _lastMouseY = mouseY;
+}
 
-    // Defina as cores para cada vértice
-    static const cg::Color c[]
-    {
-    cg::Color{0.0f, 0.0f, 0.0f}, // 0
-    cg::Color{1.0f, 0.0f, 0.0f}, // 1
-    cg::Color{1.0f, 1.0f, 0.0f}, // 2
-    cg::Color{0.0f, 1.0f, 0.0f}, // 3
-    cg::Color{0.0f, 0.0f, 1.0f}, // 4
-    cg::Color{1.0f, 0.0f, 1.0f}, // 5
-    cg::Color{1.0f, 1.0f, 1.0f}, // 6
-    cg::Color{0.0f, 1.0f, 1.0f}  // 7
-    };
+// Função para atualizar a direção da câmera com base nos ângulos yaw e pitch
+void
+MainWindow::updateCameraDirection()
+{
+    _cameraFront.x = cos(math::toRadians(_yaw)) * cos(math::toRadians(_pitch));
+    _cameraFront.y = sin(math::toRadians(_pitch));
+    _cameraFront.z = sin(math::toRadians(_yaw)) * cos(math::toRadians(_pitch));
+    _cameraFront = _cameraFront.normalize();
+    _cameraTarget = _cameraPosition + _cameraFront;
+}
 
-    // Defina os índices para criar os triângulos do cubo
-    static const uint3 t[]
-    {
-    {0, 3, 1}, {1, 3, 2}, // back
-    {4, 5, 7}, {5, 6, 7}, // front
-    {0, 4, 3}, {4, 7, 3}, // left
-    {1, 2, 5}, {5, 2, 6}, // right
-    {0, 1, 4}, {1, 5, 4}, // bottom
-    {7, 6, 3}, {6, 2, 3}  // top
-    };
-
-} // end namespace cubo
-
-namespace losangulo
-{ // begin namespace losangulo
-
-    static const cg::vec3f translate{ 0.0f, 0.5f, 0.0f };
-
-    // Defina os vértices para o losango 3D
-    static const cg::vec4f v[]
-    {
-        {0.0f, 0.3f, 0.0f, 1},   // Vertice 0 - topo
-        {0.3f, 0.0f, 0.0f, 1},   // Vertice 1 - direita
-        {0.0f, -0.3f, 0.0f, 1},  // Vertice 2 - fundo
-        {-0.3f, 0.0f, 0.0f, 1},  // Vertice 3 - esquerda
-        {0.0f, 0.0f, 0.3f, 1},   // Vertice 4 - frente
-        {0.0f, 0.0f, -0.3f, 1}   // Vertice 5 - trás
-    };
-
-    // Defina as cores para cada vértice
-    static const cg::Color c[]
-    {
-        cg::Color{1.0f, 0.0f, 0.0f},  // Cor 0 - vermelho
-        cg::Color{0.0f, 1.0f, 0.0f},  // Cor 1 - verde
-        cg::Color{0.0f, 0.0f, 1.0f},  // Cor 2 - azul
-        cg::Color{1.0f, 1.0f, 0.0f},  // Cor 3 - amarelo
-        cg::Color{1.0f, 0.0f, 1.0f},  // Cor 4 - magenta
-        cg::Color{0.0f, 1.0f, 1.0f}   // Cor 5 - ciano
-    };
-
-    // Defina os índices para criar os triângulos do losango
-    static const uint3 t[]
-    {
-        {0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {3, 0, 4}, // Faces do topo
-        {0, 1, 5}, {1, 2, 5}, {2, 3, 5}, {3, 0, 5}  // Faces da base
-    };
- 
-} // end namespace losangulo
-
-namespace piramide
-{ //begin namespace piramide
-    static const cg::vec3f translate{ -0.5f, -0.1f, 0.0f };
-
-    // Defina os vértices para o piramide 3D
-    static const cg::vec4f v[]
-    {
-        {0.0f, -0.402951f, -0.402951f, 1.0f},
-        {-0.402951f, -0.402951f, 0.0f, 1.0f},
-        {0.0f, -0.402951f, 0.402951f, 1.0f},    
-        {0.402951f, -0.402951f, 0.0f, 1.0f},
-        {0.0f, 0.402951f, 0.0f, 1.0f}
-    };
-
-    // Defina as cores para cada vértice
-    static const cg::Color c[]
-    {
-        cg::Color{1.0f, 0.0f, 0.0f}, // Red (top vertex)
-        cg::Color{1.0f, 1.0f, 0.0f}, // Yellow (vertex 1)
-        cg::Color{0.0f, 1.0f, 0.0f}, // Green (vertex 2)
-        cg::Color{0.0f, 0.0f, 1.0f}, // Blue (vertex 3)
-        cg::Color{1.0f, 0.0f, 1.0f}  // Purple (vertex 4)
-    };
-
-    // Defina os índices para criar os triângulos da piramide
-    static const uint3 t[]
-    {
-        {0, 3, 1},
-        {0, 1, 4},
-        {1, 2, 4},
-        {2, 3, 4},
-        {3, 0, 4},
-        {1, 3, 2}
-    };
-} // end namespace piramide
-
-static const char* vs = STRINGFY(
-    layout(location = 0) in vec4 vertex;
-    layout(location = 1) in vec4 vertexColor;
-    out vec4 color;
-
-    uniform mat4 view; // Matriz de visualização
-    uniform mat4 projection; // Matriz de projeção
-    uniform mat4 transf;
-
-    void main()
-    {
-        vec4 result = projection * view * transf * vertex;
-        gl_Position = result;
-        color = vertexColor;
+// Função para atualizar a posição da camera com uso do WASDQE
+void 
+MainWindow::processKeyboardInput()
+{
+    if (isKeyPressed(GLFW_KEY_W)){
+        _cameraPosition += _cameraSpeed * _cameraFront;
     }
-);
+    if (isKeyPressed(GLFW_KEY_S)){
+        _cameraPosition -= _cameraSpeed * _cameraFront;
+    }
+    if (isKeyPressed(GLFW_KEY_A)){
+        _cameraPosition -= _cameraFront.cross(_cameraUp).normalize() * _cameraSpeed;
+    }
+    if (isKeyPressed(GLFW_KEY_D)){
+        _cameraPosition += _cameraFront.cross(_cameraUp).normalize() * _cameraSpeed;
+    }
+    if (isKeyPressed(GLFW_KEY_Q)){
+        _cameraPosition -= _cameraSpeed * _cameraUp;
+    }
+    if (isKeyPressed(GLFW_KEY_E)){
+        _cameraPosition += _cameraSpeed * _cameraUp;
+    }
+}
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -205,7 +98,9 @@ static const char* vs = STRINGFY(
 MainWindow::MainWindow(int width, int height):
   Base{"RGB cube", width, height},
   _program{"Cube Drawer"}
-{ }
+{
+    reset();
+}
 
 template <typename T>
 inline int
@@ -223,68 +118,75 @@ MainWindow::initialize()
     glDisable(GL_CULL_FACE);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.0f, 1.0f);
-  
 
     glGenVertexArrays(3, _vao);
   
     // Gere os buffers para cada objeto e tipo de buffer
     for (int i = 0; i < 3; ++i) {
-        glGenBuffers(3, _buffers[i]);
+        glGenBuffers(4, _buffers[i]);
     }
-
   
     // Adicione os dados do cubo aos buffers
     glBindVertexArray(_vao[0]); 
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[0][0]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(8), cubo::v, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(cubo::nun_vertices), cubo::v, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
-  
 
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[0][1]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(8), cubo::c, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(cubo::nun_vertices), cubo::c, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
 
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[0][2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(12), cubo::t, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, _buffers[0][2]);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec3f>(cubo::nun_vertices), cubo::n, GL_STATIC_DRAW);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[0][3]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(cubo::nun_faces), cubo::t, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(3);
 
     // Adicione os dados do losango aos buffers
     glBindVertexArray(_vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[1][0]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(6), losangulo::v, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(losangulo::nun_vertices), losangulo::v, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[1][1]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(6), losangulo::c, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(losangulo::nun_vertices), losangulo::c, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
 
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1][2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(8), losangulo::t, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, _buffers[1][2]);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec3f>(losangulo::nun_vertices), losangulo::n, GL_STATIC_DRAW);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1][3]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(losangulo::nun_faces), losangulo::t, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(3);
   
     // Adicione os dados da piramide aos buffers
     glBindVertexArray(_vao[2]);
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[2][0]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(5), piramide::v, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec4f>(piramide::nun_vertices), piramide::v, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[2][1]);
-    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(5), piramide::c, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::Color>(piramide::nun_vertices), piramide::c, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
-  
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[2][2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(6), piramide::t, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _buffers[2][2]);
+    glBufferData(GL_ARRAY_BUFFER, size<cg::vec3f>(piramide::nun_vertices), piramide::n, GL_STATIC_DRAW);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+  
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[2][3]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size<uint3>(piramide::nun_faces), piramide::t, GL_STATIC_DRAW);
     glEnableVertexAttribArray(2);
 
     _program.setShaders(vs, fs).use();//vs, fs -> shader de vertice, shader de fragmento
@@ -299,47 +201,75 @@ MainWindow::render()
 {
     using namespace cg;
     // Put your scene rendering code here. 
-    clear(cg::Color::darkGray);//limpa a tela e coloca darkgray de cor de fundo
-    //_program.setUniformMat4("transf", _transf);
+    clear(cg::Color::black);//limpa a tela e coloca darkgray de cor de fundo
+
+    processKeyboardInput();
+    
+    if (isKeyPressed(GLFW_KEY_LEFT_ALT)) {
+        double MouseX, MouseY;
+        Base::cursorPosition(MouseX, MouseY);
+        processMouseMovement(MouseX, MouseY);
+    }
+    Base::cursorPosition(_lastMouseX, _lastMouseY);
+    updateCameraDirection();
+
+    //_program.setUniform("angulo", _angle);
+
+
+    // Atualizar a matriz de visualização ou a direção da câmera
+    _view = mat4f::lookAt(_cameraPosition, _cameraTarget, _cameraUp);
+    _program.setUniformMat4("view", _view);
+    _program.setUniformVec3("camPos", _cameraPosition);
+
+    _projection = cg::mat4f::perspective(_fov, _aspectRatio, _nearPlane, _farPlane);
+    _program.setUniformMat4("projection", _projection);
     
     _program.setUniformVec4("ambientLight", _ambientLight);
-    //_program.setUniformVec4("specularLight", _specularLight);
-    //_program.setUniformVec4("difuseLight", _difuseLight);
-
-    _view = cg::mat4f::lookAt(_eye, _center, _up);
-    _program.setUniformMat4("view", _view);
-
-    _projection = cg::mat4f::perspective(_fovy, _aspect, _zNear, _zFar);
-    _program.setUniformMat4("projection", _projection);
+    _program.setUniformVec4("lightColor", _lightColor);
+    _program.setUniformVec3("lightPos", _lightPos);
+    _program.setUniform("n", _n);
 
     if (_animate)
         _rotation = _rotation + vec3f{ 0.0f, 0.1f, 0.0f };
 
+    _program.setUniformVec3("rotation", _rotation);
+
     if (_cubo)
     {
-        _transf = _transf.TRS(cubo::translate, _rotation, _scale);
-        _program.setUniformMat4("transf", _transf);
+        //_transf = _transf.TRS(cubo::translate, _rotation, _scale);
+        _program.setUniformVec3("translate", cubo::translate);
 
         glBindVertexArray(_vao[0]);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);  // Renderize o cubo
+        if (_line)
+            glDrawElements(GL_LINE_STRIP, cubo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
+        else
+            glDrawElements(GL_TRIANGLES, cubo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o cubo
     }
 
     if (_losangulo)
     {
-        _transf = _transf.TRS(losangulo::translate, _rotation, _scale);
-        _program.setUniformMat4("transf", _transf);
+        //_transf = _transf.TRS(losangulo::translate, _rotation, _scale);
+        //_program.setUniformMat4("transf", _transf);
+        _program.setUniformVec3("translate", losangulo::translate);
 
         glBindVertexArray(_vao[1]);
-        glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);  // Renderize o losangulo
+        if (_line)
+            glDrawElements(GL_LINE_STRIP, losangulo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
+        else
+            glDrawElements(GL_TRIANGLES, losangulo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o losangulo
     }
 
     if (_piramide)
     {
-        _transf = _transf.TRS(piramide::translate, _rotation, _scale);
-        _program.setUniformMat4("transf", _transf);
+        //_transf = _transf.TRS(piramide::translate, _rotation, _scale);
+        //_program.setUniformMat4("transf", _transf);
+        _program.setUniformVec3("translate", piramide::translate);
 
         glBindVertexArray(_vao[2]);
-        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);  // Renderize a piramide
+        if(_line)
+            glDrawElements(GL_LINE_STRIP, piramide::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
+        else
+            glDrawElements(GL_TRIANGLES, piramide::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
     }
 };
 
@@ -361,30 +291,39 @@ MainWindow::gui()
         ImGui::Separator();
         ImGui::Text("Controles dos Objetos");
         DoubleSpacing();
-        ImGui::DragFloat3("Rotação", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
+        //ImGui::DragFloat3("Rotação", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
+        ImGui::DragFloat3("Rotação", (float*)&_rotation, 0.1f, -5, 5, "%.2f");
+        DoubleSpacing();
+        ImGui::DragFloat3("CUBO", (float*)&cubo::translate, 1.0f, 0, 0, "%.2f");
+        ImGui::DragFloat3("LOSANGULO", (float*)&losangulo::translate, 1.0f, 0, 0, "%.2f");
+        ImGui::DragFloat3("PIRAMIDE", (float*)&piramide::translate, 1.0f, 0, 0, "%.2f");
+        DoubleSpacing();
         ImGui::Checkbox("Cubo", &_cubo);
         ImGui::Checkbox("Losangulo", &_losangulo);
         ImGui::Checkbox("Piramide", &_piramide);
+        ImGui::Checkbox("LINE", &_line);
     }
 
     ImGui::Separator();
     ImGui::Text("Controles das Luz");
     DoubleSpacing();
     ImGui::DragFloat4("Luz Ambiente", (float*)&_ambientLight, 0.01f, 0, 1, "%.2f");
-    //ImGui::DragFloat4("Luz Especular", (float*)&_specularLight, 0.01f, 0, 1, "%.2f");
-    //ImGui::DragFloat4("Luz Difusa", (float*)&_difuseLight, 0.01f, 0, 1, "%.2f");
+    ImGui::DragFloat4("Cor da Luz", (float*)&_lightColor, 0.01f, 0, 1, "%.2f");
+    ImGui::DragFloat3("Posição da Luz", (float*)&_lightPos, 1.0f, -100, 100, "%.2f");
+    ImGui::DragInt("N", &_n, 1, 0, 100);
 
     ImGui::Separator();
     ImGui::Text("Controles da Câmera");
     DoubleSpacing();
-    ImGui::DragFloat3("Olho", (float*)&_eye, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat3("Centro", (float*)&_center, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat3("UP", (float*)&_up, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("Posição", (float*)&_cameraPosition, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("Alvo", (float*)&_cameraTarget, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("CameraFront", (float*)&_cameraFront, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat3("CameraUP", (float*)&_cameraUp, 1.0f, 0, 0, "%.2f");
     DoubleSpacing();
-    ImGui::DragFloat("Fovy", (float*)&_fovy, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("Aspect", (float*)&_aspect, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("zNear", (float*)&_zNear, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("zFar", (float*)&_zFar, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("Fov", (float*)&_fov, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("Aspect", (float*)&_aspectRatio, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("NearPlane", (float*)&_nearPlane, 1.0f, 0, 0, "%.2f");
+    ImGui::DragFloat("FarPlane", (float*)&_farPlane, 1.0f, 0, 0, "%.2f");
     ImGui::End();
 }
 
