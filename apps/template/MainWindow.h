@@ -58,11 +58,9 @@ private:
 	GLuint _vao[3]{};
 	GLuint _buffers[3][4];
 
-	mat4f _transf{ 1.0f };
 	mat4f _view{ 1.0f };
 	mat4f _projection{ 1.0f };
 
-	float _angle{};
 	vec3f _cameraPosition{};
 	vec3f _cameraTarget{};
 	vec3f _cameraUp{};
@@ -74,12 +72,19 @@ private:
 
 	vec3f _rotation{};
 	vec3f _scale{ 1.0f };
+	bool _colorido{};
+	vec3f _cor{};
 
-	vec4f _ambientLight{};
-	vec4f _lightColor{};
+	bool _luzAmbiente{};
+	vec3f _ambientLight{};
+	bool _luzEspecular{};
+	bool _luzDifusa{};
+	vec3f _lightColor{};
 	vec3f _lightPos{};
+	float _ka{};
+	float _ks{};
+	float _kd{};
 	int _n;
-
 
 	bool _animate{};
 	bool _cubo{};
@@ -87,8 +92,8 @@ private:
 	bool _piramide{};
 
 	/////////////////////////////
-	double _lastMouseX = 0.0;
-	double _lastMouseY = 0.0;
+	int _lastMouseX = 0;
+	int _lastMouseY = 0;
 	double _yaw = -89.9;   // Rotação em torno do eixo y
 	double _pitch = 0.1; // Rotação em torno do eixo x
 	double _sensitivity = 0.1;
@@ -96,8 +101,6 @@ private:
 	vec3f _cameraFront{};
 
 	//////////////////////////////
-	bool _line{ false };
-
 
 	void processMouseMovement(double, double);
 	void updateCameraDirection();
@@ -111,24 +114,31 @@ private:
 	void terminate() override;
 
 	void reset() {
-		_angle = 0;
-		_cameraPosition = { 0.0f, 1.0f, 15.0f };
-		_cameraTarget = { 0.0f, 1.0f, 14.0f };
+		_cameraPosition = { 0.0f, 0.0f, 5.0f };
+		_cameraTarget = { 0.0f, 0.0f, 4.0f };
 		_cameraUp = { 0.0f, 1.0f, 0.0f };
 
-		_fov = 25.0f;
+		_fov = 75.0f;
 		_aspectRatio = 1.0f;
-		_nearPlane = 1000.0f;
-		_farPlane = 1.0f;
+		_nearPlane = 0.1f;
+		_farPlane = 1000.0f;
 
 		_rotation = { 0.0f, 0.0f, 0.0f };
+		_colorido = false;
+		_cor = { 0.7f, 0.7f, 0.7f };
 
-		_ambientLight = { 1.0f, 1.0f, 1.0f, 1.0f };
-		_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		_lightPos = { 0.0f, 0.0f, -1.0f};
+		_luzAmbiente = true;
+		_ambientLight = { 1.0f, 1.0f, 0.0f};
+		_luzEspecular = true;
+		_luzDifusa = true;
+		_lightColor = { 1.0f, 1.0f, 0.0f};
+		_lightPos = { 0.0f, 0.0f, 0.0f};
+		_ka = 0.23;
+		_ks = 0.77;
+		_kd = 0.27;
 		_n = 30;
 
-		_animate = false;
+		_animate = true;
 		_cubo = true;
 		_losangulo = true;
 		_piramide = true;

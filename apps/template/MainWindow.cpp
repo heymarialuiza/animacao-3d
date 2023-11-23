@@ -96,8 +96,8 @@ MainWindow::processKeyboardInput()
 // MainWindow implementation
 // ==========
 MainWindow::MainWindow(int width, int height):
-  Base{"RGB cube", width, height},
-  _program{"Cube Drawer"}
+  Base{"Trabalho Final - Computação Gráfica", width, height},
+  _program{"Desenho de Objetos 3D"}
 {
     reset();
 }
@@ -194,27 +194,27 @@ MainWindow::initialize()
 
 void
 MainWindow::update()
-{ }
+{
+}
 
 void
 MainWindow::render()
 {
     using namespace cg;
-    // Put your scene rendering code here. 
-    clear(cg::Color::black);//limpa a tela e coloca darkgray de cor de fundo
+    clear(cg::Color::black); //limpa a tela e coloca black de cor de fundo
 
     processKeyboardInput();
     
     if (isKeyPressed(GLFW_KEY_LEFT_ALT)) {
-        double MouseX, MouseY;
+        int MouseX, MouseY;
         Base::cursorPosition(MouseX, MouseY);
-        processMouseMovement(MouseX, MouseY);
+        processMouseMovement((double)MouseX, (double)MouseY);
     }
     Base::cursorPosition(_lastMouseX, _lastMouseY);
     updateCameraDirection();
 
-    //_program.setUniform("angulo", _angle);
-
+    _program.setUniform("colorido", _colorido);
+    _program.setUniformVec3("cor", _cor);
 
     // Atualizar a matriz de visualização ou a direção da câmera
     _view = mat4f::lookAt(_cameraPosition, _cameraTarget, _cameraUp);
@@ -224,9 +224,17 @@ MainWindow::render()
     _projection = cg::mat4f::perspective(_fov, _aspectRatio, _nearPlane, _farPlane);
     _program.setUniformMat4("projection", _projection);
     
-    _program.setUniformVec4("ambientLight", _ambientLight);
-    _program.setUniformVec4("lightColor", _lightColor);
+    _program.setUniformVec3("ambientLight", _ambientLight);
+    _program.setUniformVec3("lightColor", _lightColor);
     _program.setUniformVec3("lightPos", _lightPos);
+
+    _program.setUniform("luzAmbiente", _luzAmbiente);
+    _program.setUniform("luzEspecular", _luzEspecular);
+    _program.setUniform("luzDifusa", _luzDifusa);
+    
+    _program.setUniform("ka", _ka);
+    _program.setUniform("kd", _kd);
+    _program.setUniform("ks", _ks);
     _program.setUniform("n", _n);
 
     if (_animate)
@@ -236,40 +244,26 @@ MainWindow::render()
 
     if (_cubo)
     {
-        //_transf = _transf.TRS(cubo::translate, _rotation, _scale);
         _program.setUniformVec3("translate", cubo::translate);
 
         glBindVertexArray(_vao[0]);
-        if (_line)
-            glDrawElements(GL_LINE_STRIP, cubo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
-        else
-            glDrawElements(GL_TRIANGLES, cubo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o cubo
+        glDrawElements(GL_TRIANGLES, cubo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o cubo
     }
 
     if (_losangulo)
     {
-        //_transf = _transf.TRS(losangulo::translate, _rotation, _scale);
-        //_program.setUniformMat4("transf", _transf);
         _program.setUniformVec3("translate", losangulo::translate);
 
         glBindVertexArray(_vao[1]);
-        if (_line)
-            glDrawElements(GL_LINE_STRIP, losangulo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
-        else
-            glDrawElements(GL_TRIANGLES, losangulo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o losangulo
+        glDrawElements(GL_TRIANGLES, losangulo::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize o losangulo
     }
 
     if (_piramide)
     {
-        //_transf = _transf.TRS(piramide::translate, _rotation, _scale);
-        //_program.setUniformMat4("transf", _transf);
         _program.setUniformVec3("translate", piramide::translate);
 
         glBindVertexArray(_vao[2]);
-        if(_line)
-            glDrawElements(GL_LINE_STRIP, piramide::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
-        else
-            glDrawElements(GL_TRIANGLES, piramide::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
+        glDrawElements(GL_TRIANGLES, piramide::nun_faces * 3, GL_UNSIGNED_INT, 0);  // Renderize a piramide
     }
 };
 
@@ -277,54 +271,68 @@ void
 MainWindow::gui()
 {
     using namespace cg;
-    ImGui::SetNextWindowSize(ImVec2(240, 240), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Inspector");
+    using namespace ImGui;
 
-    if (ImGui::Button("RESET")) {
+    SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
+    Begin("Controles");
+    Spacing();
+    if (Button("RESET")) {
         reset();
     }
-    DoubleSpacing();
-    ImGui::Checkbox("Animate", &_animate);
-    DoubleSpacing();
 
+    DoubleSpacing();
+    Separator();
+    Text("Controles dos Objetos");
+
+    Spacing();
+    Checkbox("Animação?", &_animate);
     if (!_animate) {
-        ImGui::Separator();
-        ImGui::Text("Controles dos Objetos");
-        DoubleSpacing();
-        //ImGui::DragFloat3("Rotação", (float*)&_rotation, 1.0f, 0, 0, "%.2f");
-        ImGui::DragFloat3("Rotação", (float*)&_rotation, 0.1f, -5, 5, "%.2f");
-        DoubleSpacing();
-        ImGui::DragFloat3("CUBO", (float*)&cubo::translate, 1.0f, 0, 0, "%.2f");
-        ImGui::DragFloat3("LOSANGULO", (float*)&losangulo::translate, 1.0f, 0, 0, "%.2f");
-        ImGui::DragFloat3("PIRAMIDE", (float*)&piramide::translate, 1.0f, 0, 0, "%.2f");
-        DoubleSpacing();
-        ImGui::Checkbox("Cubo", &_cubo);
-        ImGui::Checkbox("Losangulo", &_losangulo);
-        ImGui::Checkbox("Piramide", &_piramide);
-        ImGui::Checkbox("LINE", &_line);
+        Spacing();
+        DragFloat3("Rotação", (float*)&_rotation, 1.0f, -360, 360, "%.2f");
+    }
+    
+    Spacing();
+    Checkbox("Objetos Coloridos?", &_colorido);
+    if (!_colorido) {
+        DragFloat3("Cor do Objeto", (float*)&_cor, 0.05f, 0, 1, "%.2f");
     }
 
-    ImGui::Separator();
-    ImGui::Text("Controles das Luz");
-    DoubleSpacing();
-    ImGui::DragFloat4("Luz Ambiente", (float*)&_ambientLight, 0.01f, 0, 1, "%.2f");
-    ImGui::DragFloat4("Cor da Luz", (float*)&_lightColor, 0.01f, 0, 1, "%.2f");
-    ImGui::DragFloat3("Posição da Luz", (float*)&_lightPos, 1.0f, -100, 100, "%.2f");
-    ImGui::DragInt("N", &_n, 1, 0, 100);
+    Spacing();
+    Checkbox("Mostrar Cubo?", &_cubo);
+    Checkbox("Mostrar Losangulo?", &_losangulo);
+    Checkbox("Mostrar Piramide?", &_piramide);
 
-    ImGui::Separator();
-    ImGui::Text("Controles da Câmera");
     DoubleSpacing();
-    ImGui::DragFloat3("Posição", (float*)&_cameraPosition, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat3("Alvo", (float*)&_cameraTarget, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat3("CameraFront", (float*)&_cameraFront, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat3("CameraUP", (float*)&_cameraUp, 1.0f, 0, 0, "%.2f");
+    Separator();
+    Spacing();
+    Text("Controles da Luz Ambiente");
+    Spacing();
+    Checkbox("Luz Ambiente?", &_luzAmbiente);
+    if (_luzAmbiente) {
+        Spacing();
+        DragFloat3("Cor em RGB ", (float*)&_ambientLight, 0.01f, 0, 1, "%.2f");
+        DragFloat("Coeficiente", (float*)&_ka, 0.01f, 0, 1, "%.2f");
+    }
+    
     DoubleSpacing();
-    ImGui::DragFloat("Fov", (float*)&_fov, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("Aspect", (float*)&_aspectRatio, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("NearPlane", (float*)&_nearPlane, 1.0f, 0, 0, "%.2f");
-    ImGui::DragFloat("FarPlane", (float*)&_farPlane, 1.0f, 0, 0, "%.2f");
-    ImGui::End();
+    Text("Controles das Luzes Especular e Difusa");
+    Spacing();
+    Checkbox("Luz Difusa?", &_luzDifusa);
+    Checkbox("Luz Especular?", &_luzEspecular);
+    if (_luzDifusa || _luzEspecular) {
+        Spacing();
+        DragFloat3("Cor em RGB", (float*)&_lightColor, 0.01f, 0, 1, "%.2f");
+        DragFloat("Coeficiente Da Difusa", (float*)&_kd, 0.01f, 0, 1, "%.2f");
+        DragFloat("Coeficiente Da Especular", (float*)&_ks, 0.01f, 0, 1, "%.2f");
+        DragFloat3("Posição da Luz", (float*)&_lightPos, 0.1f, -100, 100, "%.2f");
+    }
+
+    DoubleSpacing();
+    Separator();
+    Text("Controles da Câmera");
+    Spacing();
+    DragFloat3("Posição", (float*)&_cameraPosition, 1.0f, 0, 0, "%.2f");
+    End();
 }
 
 void

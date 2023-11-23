@@ -5,39 +5,60 @@ in vec4 normal;
 in vec3 fragPos;
 out vec4 fragColor; //saída do shader
 
-uniform vec4 ambientLight;
-uniform vec4 lightColor;
+uniform vec3 ambientLight;
+uniform vec3 lightColor;
 uniform vec3 lightPos;// = vec3(1, 1, 1);
 uniform int n;
 uniform vec3 camPos;
+uniform bool luzAmbiente;
+uniform bool luzEspecular;
+uniform bool luzDifusa;
+uniform float ka;
+uniform float ks;
+uniform float kd;
+uniform bool colorido;
+uniform vec3 cor;
 
 
 void main()
 {
+    vec4 ambiente = vec4(0, 0, 0, 1);
+    vec4 difusa = vec4(0, 0, 0, 1);
+    vec4 especular = vec4(0, 0, 0, 1);
+
     //Ambiente
-    float ka = ambientLight.w;
-    vec4 ambientColor = vec4(ambientLight.x, ambientLight.y, ambientLight.z, 1.0);
-    vec4 ambiente = ka * ambientColor;
-    
+    if (luzAmbiente) {
+        vec4 ambientColor = vec4(ambientLight, 1.0);
+        ambiente = ka * ambientColor;
+    }
+
     //Difusa
-    float kd = lightColor.w;
-    vec4 difuseColor = vec4(lightColor.x, lightColor.y, lightColor.z, 1.0);
+    vec4 difuseColor = vec4(lightColor, 1.0);
     vec4 ligthDir = normalize(vec4(lightPos - fragPos, 1.0));
-    float cosTeta = clamp(dot(normal,ligthDir),0.,1.);
-    vec4 difusa = difuseColor*kd*cosTeta;
+    float cosTeta = clamp(dot(normalize(normal), ligthDir), 0., 1.);
+
+    if (luzDifusa) {
+        difusa = difuseColor * kd * cosTeta;
+    }
 
     //Especular
-    float ks = lightColor.w;
-    vec4 specularColor = vec4(lightColor.x, lightColor.y, lightColor.z, 1.0);
-    vec4 reflex = 2 * normal * cosTeta - normalize(vec4(lightPos, 1.0));
+    
+    vec4 specularColor = vec4(lightColor, 1.0);
+    vec4 reflex = 2 * normalize(normal) * cosTeta - normalize(vec4(lightPos, 1.0));
     float cosAlfa = clamp(dot(reflex, vec4(camPos, 1.0)),0.,1.);
-    vec4 especular = specularColor*ks*pow(cosAlfa,n);
+
+    if (luzEspecular) {
+        especular = specularColor*ks*pow(cosAlfa,n);
+    }
 
     float dist = length(lightPos - fragPos);
     float atenuacao = 1.0 / (1 + 0.09 * dist + 0.032 * dist * dist);
 
     //Phong
-    fragColor = (ambiente + (difusa + especular) * atenuacao) * color;
+    if (colorido)
+        fragColor = (ambiente + (difusa + especular) * atenuacao) * color;
+    else
+        fragColor = (ambiente + (difusa + especular) * atenuacao) * vec4(cor,1.0);
 }
 );
 
@@ -55,12 +76,12 @@ uniform vec3 rotation;
 uniform vec3 translate;
 
 mat4 TR(vec3 rotation, vec3 translate) {
-    float cosX = cos(rotation.x);
-    float sinX = sin(rotation.x);
-    float cosY = cos(rotation.y);
-    float sinY = sin(rotation.y);
-    float cosZ = cos(rotation.z);
-    float sinZ = sin(rotation.z);
+    float cosX = cos(radians(rotation.x));
+    float sinX = sin(radians(rotation.x));
+    float cosY = cos(radians(rotation.y));
+    float sinY = sin(radians(rotation.y));
+    float cosZ = cos(radians(rotation.z));
+    float sinZ = sin(radians(rotation.z));
 
     mat4 rotationX = mat4(
         1.0, 0.0, 0.0, 0.0,
@@ -81,10 +102,10 @@ mat4 TR(vec3 rotation, vec3 translate) {
         0.0, 0.0, 0.0, 1.0);
 
     mat4 mTranslate = mat4(
-        1.0, 0.0, 0.0, 0,
-        0.0, 1.0, 0.0, 0,
-        0.0, 0.0, 1.0, 0,
-        translate.x, translate.y, translate.y, 1.0);
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        translate.x, translate.y, translate.z, 1.0);
 
     return mTranslate * rotationZ * rotationY * rotationX;
 }
@@ -96,9 +117,10 @@ void main()
     gl_Position = projection * view * rotateTranslate * vertex;
 
     color = vertexColor;
-    normal = vec4(rotateTranslate * vec4(vertexNormal, 1.0));
+    
+    normal = transpose(inverse(view * rotateTranslate)) * vec4(vertexNormal, 1.0);//vec4(rotateTranslate * vec4(vertexNormal, 1.0));
 
-    vec4 tranform = rotateTranslate * vertex;
-    fragPos = vec3(tranform.x, tranform.y, tranform.z);
+    vec4 transform = rotateTranslate * vertex;
+    fragPos = vec3(transform);
 }
 );

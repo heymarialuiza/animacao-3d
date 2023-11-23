@@ -14,7 +14,7 @@ struct uint3
 namespace cubo
 { // begin namespace cubo
 
-    static cg::vec3f translate{ 1.5f, 0.0f, 0.0f };
+    static cg::vec3f translate{ 1.5f, -1.0f, 0.0f };
 
     static const int nun_vertices = 8;
     static const int nun_faces = 12;
@@ -79,7 +79,7 @@ namespace cubo
 namespace losangulo
 { // begin namespace losangulo
 
-    static cg::vec3f translate{ 0.0f, 2.0f, 0.0f };
+    static cg::vec3f translate{ 0.0f, 1.0f, 0.0f };
 
     static const int nun_vertices = 6;
     static const int nun_faces = 8;
@@ -133,7 +133,7 @@ namespace losangulo
 
 namespace piramide
 { //begin namespace piramide
-    static cg::vec3f translate{ -1.5f, 0.0f, 0.0f };
+    static cg::vec3f translate{ -1.5f, -1.0f, 0.0f };
 
     static const int nun_vertices = 5;
     static const int nun_faces = 6;

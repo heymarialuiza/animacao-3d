@@ -126,14 +126,14 @@ protected:
   }
 
   /// Returns the cursor position on this window.
-  void cursorPosition(double& x, double& y) const
+  void cursorPosition(int& x, int& y) const
   {
     double xpos;
     double ypos;
 
     glfwGetCursorPos(_window, &xpos, &ypos);
-    x = xpos;
-    y = ypos;
+    x = (int)xpos;
+    y = (int)ypos;
   }
 
   /// Returns true if \c key is pressed.
